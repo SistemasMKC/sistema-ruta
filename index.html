@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutas · Despacho</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="login" class="login hidden">
+  <h1>Despacho de rutas</h1>
+  <small>Ingresa con tu usuario de despachador</small>
+  <form id="loginForm">
+    <label for="email">Correo</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="pass">Clave</label>
+    <input id="pass" type="password" autocomplete="current-password" required>
+    <p id="loginErr" class="hint" style="color:var(--red)"></p>
+    <button class="primary" style="width:100%;margin-top:10px">Entrar</button>
+  </form>
+</section>
+
+<main id="app" class="app hidden">
+  <aside class="side">
+    <div class="topbar">
+      <h1>🏍️ Despacho de rutas</h1>
+      <button id="logout" class="small">Salir</button>
+    </div>
+    <nav class="tabs">
+      <button data-tab="orders" class="on">Pedidos</button>
+      <button data-tab="drivers">Domiciliarios</button>
+    </nav>
+
+    <!-- PEDIDOS -->
+    <div id="tab-orders" class="tabpane">
+      <details class="card" id="newOrderCard">
+        <summary><b>＋ Nuevo pedido</b></summary>
+        <form id="orderForm" autocomplete="off">
+          <label for="oName">Cliente</label>
+          <input id="oName" required maxlength="80">
+          <label for="oPhone">Teléfono / WhatsApp</label>
+          <input id="oPhone" inputmode="tel" maxlength="20" placeholder="3001234567">
+          <label for="oCity">Municipio</label>
+          <select id="oCity"></select>
+          <label for="oAddr">Dirección</label>
+          <div class="row">
+            <input id="oAddr" required maxlength="140" placeholder="Cra 50 # 45-20, barrio">
+            <button type="button" id="geoBtn">Ubicar</button>
+          </div>
+          <ul id="geoResults" class="geo-results"></ul>
+          <p class="hint" id="pinHint">Busca la dirección o haz clic en el mapa para colocar el punto. Puedes arrastrar el marcador para ajustarlo.</p>
+          <label for="oNotes">Notas (apto, referencia, cobro…)</label>
+          <input id="oNotes" maxlength="200">
+          <button class="primary" style="width:100%;margin-top:12px" id="saveOrder">Guardar pedido</button>
+        </form>
+      </details>
+
+      <div id="assignBar" class="card hidden">
+        <h3>Asignar seleccionados</h3>
+        <div class="row">
+          <select id="assignDriver"></select>
+          <button class="primary" id="assignBtn">Asignar y optimizar</button>
+        </div>
+      </div>
+
+      <div id="orderList"></div>
+    </div>
+
+    <!-- DOMICILIARIOS -->
+    <div id="tab-drivers" class="tabpane hidden">
+      <div class="card">
+        <h3>Nuevo domiciliario</h3>
+        <form id="driverForm" autocomplete="off">
+          <label for="dName">Nombre</label>
+          <input id="dName" required maxlength="60">
+          <label for="dPin">PIN de acceso (mínimo 6 caracteres)</label>
+          <input id="dPin" required minlength="6" maxlength="20">
+          <button class="primary" style="width:100%;margin-top:10px">Crear</button>
+        </form>
+        <p class="hint">El domiciliario entra desde su celular en <b id="driverUrl"></b> con este PIN.</p>
+      </div>
+      <div id="driverList"></div>
+      <div class="card">
+        <h3>Mantenimiento</h3>
+        <button id="purgeBtn" class="small">Borrar fotos de evidencia de más de 60 días</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="mapwrap"><div id="map"></div></div>
+</main>
+
+<dialog id="proofDlg">
+  <h3 id="proofTitle"></h3>
+  <p id="proofInfo" class="hint"></p>
+  <img id="proofImg" alt="Evidencia de entrega">
+  <form method="dialog"><button style="width:100%;margin-top:12px">Cerrar</button></form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="dispatcher.js"></script>
+</body>
+</html>

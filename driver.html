@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#c8372d">
+<title>Rutas · Domiciliario</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="login" class="login hidden">
+  <h1>🏍️ Domiciliarios</h1>
+  <small>Ingresa tu PIN</small>
+  <form id="loginForm">
+    <label for="pin">PIN</label>
+    <input id="pin" type="password" autocomplete="off" required>
+    <p id="loginErr" class="hint" style="color:var(--red)"></p>
+    <button class="primary" style="width:100%;margin-top:10px">Entrar</button>
+  </form>
+</section>
+
+<main id="app" class="mobile hidden">
+  <header class="bar">
+    <div><b id="who"></b><br><small><span id="gpsDot" class="dot"></span><span id="gpsTxt">GPS apagado</span></small></div>
+    <div class="acts">
+      <button id="gpsBtn" class="primary">Iniciar ruta</button>
+      <button id="outBtn" class="small">Salir</button>
+    </div>
+  </header>
+  <div id="dmap"></div>
+  <div class="stops">
+    <div class="row" style="margin-bottom:10px">
+      <button id="reoptBtn" class="small">↻ Reoptimizar desde mi ubicación</button>
+    </div>
+    <div id="stopList"></div>
+  </div>
+</main>
+
+<dialog id="doneDlg">
+  <form id="doneForm" method="dialog">
+    <h3 id="doneTitle"></h3>
+    <p id="doneAddr" class="hint"></p>
+    <div id="failBox" class="hidden">
+      <label for="reason">Motivo</label>
+      <select id="reason">
+        <option>Cliente no respondió</option>
+        <option>Dirección incorrecta</option>
+        <option>Cliente rechazó el pedido</option>
+        <option>Nadie en el lugar</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <label for="photo">Foto de evidencia (opcional)</label>
+    <input id="photo" type="file" accept="image/*" capture="environment">
+    <img id="preview" class="hidden" alt="Vista previa" style="margin-top:8px">
+    <div class="row" style="margin-top:14px">
+      <button type="button" id="doneCancel">Cancelar</button>
+      <button type="submit" id="doneOk" class="ok" style="flex:1">Confirmar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="driver.js"></script>
+</body>
+</html>
