@@ -274,23 +274,121 @@
   }
   function clearDraft() { if (draftMarker) { map.removeLayer(draftMarker); draftMarker = null; } state.draft = null; }
 
+  // Normaliza la nomenclatura habitual de direcciones en Colombia.
+  function normalizeColombianAddress(value) {
+    let q = value.trim().toLowerCase()
+      .replace(/\b(cll|cl|c)\b\.?/g, 'calle')
+      .replace(/\b(cra|cr|kra|kr|k)\b\.?/g, 'carrera')
+      .replace(/\b(av|avda)\b\.?/g, 'avenida')
+      .replace(/\b(diag|dg)\b\.?/g, 'diagonal')
+      .replace(/\b(transv|trans|tv|t)\b\.?/g, 'transversal')
+      .replace(/\s+/g, ' ');
+    // Convierte "Calle 65 90 90" en "Calle 65 # 90-90".
+    q = q.replace(/\b(calle|carrera|avenida|diagonal|transversal)\s+(\d+[a-z]?)\s+(\d{1,3})\s+(\d{1,3})\b/i,
+      '$1 $2 # $3-$4');
+    // Da formato uniforme a variantes como "Calle 65 #90 90".
+    q = q.replace(/#\s*(\d{1,3})\s+(\d{1,3})\b/, '# $1-$2');
+    return q.replace(/\s+/g, ' ').trim();
+  }
+
+  function photonLabel(p) {
+    const parts = [p.name, p.street, p.housenumber, p.suburb, p.district, p.city, p.state, p.country]
+      .filter(Boolean);
+    return [...new Set(parts)].join(', ');
+  }
+
   $('#geoBtn').addEventListener('click', async () => {
-    const q = $('#oAddr').value.trim();
-    if (!q) return;
+    const raw = $('#oAddr').value.trim();
+    const city = $('#oCity').value;
+    if (!raw) return toast('Escribe una dirección primero', true);
+
+    const query = normalizeColombianAddress(raw);
     const ul = $('#geoResults');
-    ul.innerHTML = '<li>Buscando…</li>';
+    const btn = $('#geoBtn');
+    btn.disabled = true;
+    btn.textContent = 'Buscando…';
+    ul.innerHTML = '<li>Buscando coincidencias de dirección…</li>';
+
     try {
-      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=co&viewbox=-75.75,6.50,-75.30,6.05&q='
-        + encodeURIComponent(`${q}, ${$('#oCity').value}, Antioquia`);
-      const res = await fetchJson(url);
-      if (!res.length) { ul.innerHTML = '<li>Sin resultados. Haz clic en el mapa para colocar el punto manualmente.</li>'; return; }
-      ul.innerHTML = res.map((r, i) => `<li data-i="${i}">${esc(r.display_name)}</li>`).join('');
-      ul.onclick = (e) => {
-        const li = e.target.closest('li[data-i]'); if (!li) return;
-        const r = res[+li.dataset.i];
-        setDraft(+r.lat, +r.lon); map.setView([+r.lat, +r.lon], 17); ul.innerHTML = '';
+      const cityContext = `${city}, Antioquia, Colombia`;
+      let results = [];
+
+      // 1) Photon: suele tolerar mejor consultas parciales y ofrece resultados alternativos.
+      const photonUrl = 'https://photon.komoot.io/api/?' + new URLSearchParams({
+        q: `${query}, ${cityContext}`,
+        lat: String(CFG.DEPOT.lat),
+        lon: String(CFG.DEPOT.lng),
+        limit: '8',
+        lang: 'es'
+      }).toString();
+
+      try {
+        const data = await fetchJson(photonUrl, 15000);
+        results = (data.features || []).map((f) => ({
+          lat: f.geometry.coordinates[1],
+          lon: f.geometry.coordinates[0],
+          label: photonLabel(f.properties),
+          source: 'Photon'
+        })).filter((r) => Number.isFinite(+r.lat) && Number.isFinite(+r.lon));
+      } catch (err) {
+        console.warn('Photon no disponible; se intentará Nominatim.', err);
+      }
+
+      // 2) Respaldo: Nominatim, sin limitar la búsqueda a una caja fija de Medellín.
+      if (!results.length) {
+        const nomUrl = 'https://nominatim.openstreetmap.org/search?' + new URLSearchParams({
+          format: 'jsonv2',
+          addressdetails: '1',
+          limit: '8',
+          countrycodes: 'co',
+          q: `${query}, ${cityContext}`
+        }).toString();
+        const data = await fetchJson(nomUrl, 15000);
+        results = data.map((r) => ({
+          lat: r.lat,
+          lon: r.lon,
+          label: r.display_name,
+          source: 'OpenStreetMap'
+        }));
+      }
+
+      if (!results.length) {
+        ul.innerHTML = '<li>No encontramos coincidencias. Prueba escribiendo la dirección completa (por ejemplo: Calle 65 #90-90) o ubica el punto manualmente en el mapa.</li>';
+        return;
+      }
+
+      // Evita mostrar resultados duplicados muy cercanos.
+      const unique = [];
+      for (const r of results) {
+        if (!unique.some((x) => Math.abs(x.lat - r.lat) < 0.00008 && Math.abs(x.lon - r.lon) < 0.00008)) unique.push(r);
+      }
+      ul.innerHTML = unique.map((r, i) =>
+        `<li data-i="${i}" role="button" tabindex="0">${esc(r.label || `${r.lat}, ${r.lon}`)}<small>Seleccionar ubicación</small></li>`
+      ).join('');
+
+      const choose = (li) => {
+        if (!li) return;
+        const r = unique[+li.dataset.i];
+        if (!r) return;
+        setDraft(+r.lat, +r.lon);
+        map.setView([+r.lat, +r.lon], 18);
+        $('#pinHint').textContent = '📍 Ubicación seleccionada. Verifica que el marcador corresponda al número exacto; puedes arrastrarlo para corregirlo.';
+        ul.innerHTML = '';
       };
-    } catch { ul.innerHTML = '<li>No se pudo buscar. Haz clic en el mapa para colocar el punto.</li>'; }
+      ul.onclick = (e) => choose(e.target.closest('li[data-i]'));
+      ul.onkeydown = (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('li[data-i]')) {
+          e.preventDefault();
+          choose(e.target);
+        }
+      };
+    } catch (err) {
+      console.error('Error buscando dirección:', err);
+      ul.innerHTML = '<li>No se pudo consultar el servicio de direcciones. Verifica tu conexión e intenta nuevamente, o coloca el punto manualmente en el mapa.</li>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ubicar';
+    }
   });
 
   $('#orderForm').addEventListener('submit', async (e) => {
