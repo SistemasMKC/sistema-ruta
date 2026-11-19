@@ -1,11 +1,11 @@
 // ============ CONFIGURACIÓN (edita solo este archivo) ============
 window.APP_CONFIG = {
   // Supabase > Project Settings > API
-  SUPABASE_URL: 'https://mjpafujakhuwmgfrvzus.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable_sqh2Nz2szZqfqYnIrKTMfQ_GJxVe293',
+  SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
+  SUPABASE_ANON_KEY: 'TU_ANON_PUBLIC_KEY',
 
   // Punto de salida de los domiciliarios (ajusta las coordenadas a tu sede)
-  DEPOT: { name: 'Sede principal', lat: 6.321455447402893, lng: -75.56188660551861 },
+  DEPOT: { name: 'Sede principal', lat: 6.3373, lng: -75.5579 },
 
   // Motor de rutas. El servidor demo de OSRM es gratis pero de uso moderado
   // y sin garantía de disponibilidad; ver README para alternativas.
