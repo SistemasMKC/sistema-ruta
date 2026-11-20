@@ -1,8 +1,8 @@
 // ============ CONFIGURACIÓN (edita solo este archivo) ============
 window.APP_CONFIG = {
   // Supabase > Project Settings > API
-  SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
-  SUPABASE_ANON_KEY: 'TU_ANON_PUBLIC_KEY',
+  SUPABASE_URL: 'https://mjpafujakhuwmgfrvzus.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_sqh2Nz2szZqfqYnIrKTMfQ_GJxVe293',
 
   // Punto de salida de los domiciliarios (ajusta las coordenadas a tu sede)
   DEPOT: { name: 'Sede principal', lat: 6.3373, lng: -75.5579 },
